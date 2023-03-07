@@ -33,9 +33,11 @@ user-name: sys as sysdba #USUARIO POR DEFECTO
 password: oracle #PASSWORD POR DEFECTO
 
 alter session set "_ORACLE_SCRIPT"=true;
-create user **tu_user** identified by **tu_user**;
-grant all privileges to **tu_user**; 
+create user (tu_user) identified by (tu_user);
+grant all privileges to (tu_user); 
 ```
 
 ### CONECTARSE A TRAVES DE CMD 
-sqlplus **tu_user**/**tu_user**@**ip**:1521/ORCL18
+```
+sqlplus (tu_user)/(tu_user)@(tu_ip):1521/ORCL18
+```
