@@ -1,16 +1,16 @@
 
-SQL*Loader: Release 18.0.0.0.0 - Production on Fri Mar 10 21:31:30 2023
+SQL*Loader: Release 18.0.0.0.0 - Production on Sat Mar 11 11:54:33 2023
 Version 18.5.0.0.0
 
 Copyright (c) 1982, 2018, Oracle and/or its affiliates.  All rights reserved.
 
-Control File:   carga.ctl
+Control File:   ./Temporal/carga.ctl
 Character Set UTF8 specified for all input.
-First primary datafile DB_Excel.csv has a
+First primary datafile ./Temporal/DB_Excel.csv has a
  utf8 byte order mark in it.
 
-Data File:      DB_Excel.csv
-  Bad File:     DB_Excel.bad
+Data File:      ./Temporal/DB_Excel.csv
+  Bad File:     ./Temporal/DB_Excel.bad
   Discard File:  none specified
  
  (Allow all discards)
@@ -69,8 +69,8 @@ Total logical records read:         14032
 Total logical records rejected:         0
 Total logical records discarded:        0
 
-Run began on Fri Mar 10 21:31:30 2023
-Run ended on Fri Mar 10 21:31:34 2023
+Run began on Sat Mar 11 11:54:33 2023
+Run ended on Sat Mar 11 11:54:36 2023
 
-Elapsed time was:     00:00:03.22
-CPU time was:         00:00:00.22
+Elapsed time was:     00:00:02.27
+CPU time was:         00:00:00.28
