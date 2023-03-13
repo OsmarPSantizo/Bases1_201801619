@@ -4,9 +4,11 @@ const usernameorc = 'prac1'
 const passwordorc = 'prac1'
 const controlFile = 'C:\Users\osmarp\Desktop\Primer Semestre 2023\Repos\Bases1_201801619\Proyecto1\Temporal\carga.ctl'
 const fs = require('fs');
+const { autoCommit } = require('oracledb');
 const user = "prac1";
 const pass = "prac1";
 const conn = "localhost:1521/ORCL18"
+oracledb.autoCommit=true;
 
 
 
@@ -61,7 +63,20 @@ exports.cons2 = async function(req,res){
 
 exports.cons3 = async function(req,res){
     try{
-        res.status(200).send({msg:"Consulta 3", valid:true})
+        var connection = await oracledb.getConnection({
+            user: user,
+            password: pass,
+            connectString: conn
+        });
+
+        const result = await connection.execute(`
+        SELECT DISTINCT  VV.NOMBRE_VICTIMA , VV.APELLIDO_VICTIMA,vv.DIRECCION_VICTIMA , COUNT(VT.ID_VICTIMA) AS asociados  FROM VICTIMAS_VIRUS vv 
+        JOIN VICTIMA_ASOCIADO vt ON VV.ID_VICTIMA = VT.ID_VICTIMA  
+        WHERE vv.FECHA_MUERTE IS NOT NULL 
+        GROUP BY VT.ID_VICTIMA, VV.NOMBRE_VICTIMA, VV.APELLIDO_VICTIMA,vv.DIRECCION_VICTIMA
+        having count(VT.ID_VICTIMA) > 3
+    `);
+        res.status(200).send({msg:"Consulta 3", resultado:result,valid:true})
     }catch(error){
         res.status(400).send({msg:"error en server"})
     }
@@ -88,7 +103,21 @@ exports.cons4 = async function(req,res){
 
 exports.cons5 = async function(req,res){
     try{
-        res.status(200).send({msg:"Consulta 5", valid:true})
+        var connection = await oracledb.getConnection({
+            user: user,
+            password: pass,
+            connectString: conn
+        });
+
+        const result = await connection.execute(`
+        SELECT DISTINCT  vv.NOMBRE_VICTIMA , vv.APELLIDO_VICTIMA , COUNT(vt.ID_VICTIMA) AS tratamientos FROM VICTIMAS_VIRUS vv
+        JOIN VICTIMA_TRATAMIENTO vt ON vt.ID_VICTIMA = vv.ID_VICTIMA 
+        WHERE vt.ID_TRATAMIENTO = 2
+        GROUP BY vt.ID_VICTIMA, vv.NOMBRE_VICTIMA , vv.APELLIDO_VICTIMA 
+        ORDER BY tratamientos DESC 
+        FETCH FIRST 5 ROWS ONLY
+    `);
+        res.status(200).send({msg:"Consulta 5", resultado:result, valid:true})
     }catch(error){
         res.status(400).send({msg:"error en server"})
     }
@@ -130,7 +159,19 @@ exports.cons8 = async function(req,res){
 }
 exports.cons9 = async function(req,res){
     try{
-        res.status(200).send({msg:"Consulta 9", valid:true})
+        var connection = await oracledb.getConnection({
+            user: user,
+            password: pass,
+            connectString: conn
+        });
+
+        const result = await connection.execute(`
+        SELECT  h.NOMBRE, (Count(h.nombre)/(SELECT COUNT(*) FROM VICTIMA_HOSPITAL))*100 AS porcentaje FROM VICTIMAS_VIRUS vv 
+        JOIN VICTIMA_HOSPITAL vh ON vv.ID_VICTIMA = vh.ID_VICTIMA 
+        JOIN HOSPITAL h ON vh.ID_HOSPITAL = h.ID_HOSPITAL 
+        GROUP BY h.nombre
+    `);
+        res.status(200).send({msg:"Consulta 9",resultado:result, valid:true})
     }catch(error){
         res.status(400).send({msg:"error en server"})
     }
@@ -252,6 +293,7 @@ exports.chargeModel = async function(req,res){
             password: pass,
             connectString: conn
         });
+        
         // CREO MI TABLA VICTIMA_VIRUS
         await connection.execute(`
         CREATE TABLE victimas_virus (
@@ -344,61 +386,61 @@ exports.chargeModel = async function(req,res){
             FOREIGN KEY (id_ubicacion ) REFERENCES ubicacion(id_ubicacion )
         )`)
         //LLENO MI TABLA DE VICTIMAS_VIRUS
-        // await connection.execute(`
-        // INSERT INTO victimas_virus (NOMBRE_VICTIMA, APELLIDO_VICTIMA, DIRECCION_VICTIMA, FECHA_PRIMERA_SOSPECHA, FECHA_CONFIRMACION, FECHA_MUERTE, ESTADO_VICTIMA)
-        // SELECT DISTINCT t.NOMBRE_VICTIMA , t.APELLIDO_VICTIMA ,t.DIRECCION_VICTIMA ,t.FECHA_PRIMERA_SOSPECHA , t.FECHA_CONFIRMACION , t.FECHA_MUERTE , t.ESTADO_VICTIMA 
-        // FROM TEMPORAL t WHERE t.NOMBRE_VICTIMA IS NOT NULL AND t.APELLIDO_VICTIMA  IS NOT NULL`)
-        // //LLENO MI TABLA DE TRATAMIENTOS
-        // await connection.execute(`
-        // INSERT INTO TRATAMIENTO (TRATAMIENTO, EFECTIVIDAD)
-        // SELECT DISTINCT t.TRATAMIENTO , t.EFECTIVIDAD 
-        // FROM TEMPORAL t WHERE T.TRATAMIENTO IS NOT NULL`)
-        // //LLENO MI TABLA DE CONTACTOS
-        // await connection.execute(`
-        // INSERT INTO CONTACTO (CONTACTO.TIPO)
-        // SELECT DISTINCT T.CONTACTO_FISICO FROM TEMPORAL t 
-        // WHERE T.CONTACTO_FISICO IS NOT NULL`)
-        // //LLENO MI TABLA DE HOSPITAL
-        // await connection.execute(`
-        // INSERT INTO HOSPITAL (NOMBRE,DIRECCION)
-        // SELECT DISTINCT t.NOMBRE_HOSPITAL, t.DIRECCION_HOSPITAL  
-        // FROM TEMPORAL t WHERE t.NOMBRE_HOSPITAL IS NOT NULL`)
-        // //LLENO MI TABLA DE ASOCIADOS
-        // await connection.execute(`
-        // INSERT INTO ASOCIADO a (a.NOMBRE_ASOCIADO,a.APELLIDO_ASOCIADO)
-        // SELECT DISTINCT t.NOMBRE_ASOCIADO, t.APELLIDO_ASOCIADO FROM TEMPORAL t
-        // WHERE t.NOMBRE_ASOCIADO IS NOT NULL AND t.APELLIDO_ASOCIADO IS NOT NULL`)
-        // //LLENO MI TABLA DE UBICACION
-        // await connection.execute(`
-        // INSERT INTO UBICACION (UBICACION.DIRECCION)
-        // SELECT DISTINCT T.UBICACION_VICTIMA FROM TEMPORAL t  WHERE T.UBICACION_VICTIMA IS NOT NULL`)
-        // //LLENO MI TABLA VICTIMA_TRATAMIENTO
-        // await connection.execute(`
-        // INSERT INTO VICTIMA_TRATAMIENTO (efectividad_vic,fecha_ini_trat	,fecha_fin_trat,id_victima,id_tratamiento)
-        // SELECT DISTINCT T.EFECTIVIDAD_EN_VICTIMA , T.FECHA_INICIO_TRATAMIENTO, T.FECHA_FIN_TRATAMIENTO, VV.ID_VICTIMA , T2.ID_TRATAMIENTO   FROM TEMPORAL t 
-        // JOIN VICTIMAS_VIRUS vv ON T.NOMBRE_VICTIMA = VV.NOMBRE_VICTIMA  AND T.APELLIDO_VICTIMA = VV.APELLIDO_VICTIMA
-        // JOIN TRATAMIENTO t2 ON T2.TRATAMIENTO  = T.TRATAMIENTO`)
-        // //LLENO MI TABLA VICTIMA_HOSPITAL
-        // await connection.execute(`
-        // INSERT INTO VICTIMA_HOSPITAL (FECHA_LLEGADA, FECHA_RETIRO,ID_VICTIMA,ID_HOSPITAL)
-        // SELECT DISTINCT T.FECHA_LLEGADA ,T.FECHA_RETIRO, VV.ID_VICTIMA , H.ID_HOSPITAL   FROM TEMPORAL t 
-        // JOIN VICTIMAS_VIRUS vv ON T.NOMBRE_VICTIMA = VV.NOMBRE_VICTIMA  AND T.APELLIDO_VICTIMA = VV.APELLIDO_VICTIMA
-        // JOIN HOSPITAL h ON T.NOMBRE_HOSPITAL = H.NOMBRE 
-        // WHERE T.FECHA_LLEGADA IS NOT NULL AND T.FECHA_RETIRO IS NOT NULL`)
-        // //LLENO MI TABLA VICTIMA_ASOCIADO
-        // await connection.execute(`
-        // INSERT INTO VICTIMA_ASOCIADO va (va.ID_VICTIMA,va.ID_ASOCIADO, va.FECHA_CONOCIO, va.FECHA_INI_CONT, va.FECHA_FIN_CONT)
-        // SELECT DISTINCT VV.ID_VICTIMA , A.ID_ASOCIADO , T.FECHA_CONOCIO, T.FECHA_INICIO_CONTACTO , T.FECHA_FIN_CONTACTO   FROM TEMPORAL t 
-        // JOIN ASOCIADO a ON T.NOMBRE_ASOCIADO = A.NOMBRE_ASOCIADO AND T.APELLIDO_ASOCIADO = A.APELLIDO_ASOCIADO 
-        // JOIN VICTIMAS_VIRUS vv ON T.NOMBRE_VICTIMA = VV.NOMBRE_VICTIMA  AND T.APELLIDO_VICTIMA = VV.APELLIDO_VICTIMA
-        // JOIN CONTACTO c ON C.TIPO = T.CONTACTO_FISICO 
-        // WHERE t.FECHA_CONOCIO IS NOT NULL  AND t.FECHA_INICIO_CONTACTO  IS NOT NULL AND t.FECHA_FIN_CONTACTO IS NOT NULL`)
-        // //LLENO MI TABLA VICTIMA_UBICACION
-        // await connection.execute(`
-        // INSERT INTO VICTIMA_UBICACION vu (vu.ID_VICTIMA,vu.ID_UBICACION)
-        // SELECT DISTINCT vv.ID_VICTIMA, u.ID_UBICACION  FROM TEMPORAL t 
-        // JOIN VICTIMAS_VIRUS vv ON T.NOMBRE_VICTIMA = VV.NOMBRE_VICTIMA  AND T.APELLIDO_VICTIMA = VV.APELLIDO_VICTIMA
-        // JOIN UBICACION u ON u.DIRECCION = t.UBICACION_VICTIMA`)
+        await connection.execute(`
+        INSERT INTO victimas_virus (NOMBRE_VICTIMA, APELLIDO_VICTIMA, DIRECCION_VICTIMA, FECHA_PRIMERA_SOSPECHA, FECHA_CONFIRMACION, FECHA_MUERTE, ESTADO_VICTIMA)
+        SELECT DISTINCT t.NOMBRE_VICTIMA , t.APELLIDO_VICTIMA ,t.DIRECCION_VICTIMA ,t.FECHA_PRIMERA_SOSPECHA , t.FECHA_CONFIRMACION , t.FECHA_MUERTE , t.ESTADO_VICTIMA 
+        FROM TEMPORAL t WHERE t.NOMBRE_VICTIMA IS NOT NULL AND t.APELLIDO_VICTIMA  IS NOT NULL`)
+        //LLENO MI TABLA DE TRATAMIENTOS
+        await connection.execute(`
+        INSERT INTO TRATAMIENTO (TRATAMIENTO, EFECTIVIDAD)
+        SELECT DISTINCT t.TRATAMIENTO , t.EFECTIVIDAD 
+        FROM TEMPORAL t WHERE T.TRATAMIENTO IS NOT NULL`)
+        //LLENO MI TABLA DE CONTACTOS
+        await connection.execute(`
+        INSERT INTO CONTACTO (CONTACTO.TIPO)
+        SELECT DISTINCT T.CONTACTO_FISICO FROM TEMPORAL t 
+        WHERE T.CONTACTO_FISICO IS NOT NULL`)
+        //LLENO MI TABLA DE HOSPITAL
+        await connection.execute(`
+        INSERT INTO HOSPITAL (NOMBRE,DIRECCION)
+        SELECT DISTINCT t.NOMBRE_HOSPITAL, t.DIRECCION_HOSPITAL  
+        FROM TEMPORAL t WHERE t.NOMBRE_HOSPITAL IS NOT NULL`)
+        //LLENO MI TABLA DE ASOCIADOS
+        await connection.execute(`
+        INSERT INTO ASOCIADO a (a.NOMBRE_ASOCIADO,a.APELLIDO_ASOCIADO)
+        SELECT DISTINCT t.NOMBRE_ASOCIADO, t.APELLIDO_ASOCIADO FROM TEMPORAL t
+        WHERE t.NOMBRE_ASOCIADO IS NOT NULL AND t.APELLIDO_ASOCIADO IS NOT NULL`)
+        //LLENO MI TABLA DE UBICACION
+        await connection.execute(`
+        INSERT INTO UBICACION (UBICACION.DIRECCION)
+        SELECT DISTINCT T.UBICACION_VICTIMA FROM TEMPORAL t  WHERE T.UBICACION_VICTIMA IS NOT NULL`)
+        //LLENO MI TABLA VICTIMA_TRATAMIENTO
+        await connection.execute(`
+        INSERT INTO VICTIMA_TRATAMIENTO (efectividad_vic,fecha_ini_trat	,fecha_fin_trat,id_victima,id_tratamiento)
+        SELECT DISTINCT T.EFECTIVIDAD_EN_VICTIMA , T.FECHA_INICIO_TRATAMIENTO, T.FECHA_FIN_TRATAMIENTO, VV.ID_VICTIMA , T2.ID_TRATAMIENTO   FROM TEMPORAL t 
+        JOIN VICTIMAS_VIRUS vv ON T.NOMBRE_VICTIMA = VV.NOMBRE_VICTIMA  AND T.APELLIDO_VICTIMA = VV.APELLIDO_VICTIMA
+        JOIN TRATAMIENTO t2 ON T2.TRATAMIENTO  = T.TRATAMIENTO`)
+        //LLENO MI TABLA VICTIMA_HOSPITAL
+        await connection.execute(`
+        INSERT INTO VICTIMA_HOSPITAL (FECHA_LLEGADA, FECHA_RETIRO,ID_VICTIMA,ID_HOSPITAL)
+        SELECT DISTINCT T.FECHA_LLEGADA ,T.FECHA_RETIRO, VV.ID_VICTIMA , H.ID_HOSPITAL   FROM TEMPORAL t 
+        JOIN VICTIMAS_VIRUS vv ON T.NOMBRE_VICTIMA = VV.NOMBRE_VICTIMA  AND T.APELLIDO_VICTIMA = VV.APELLIDO_VICTIMA
+        JOIN HOSPITAL h ON T.NOMBRE_HOSPITAL = H.NOMBRE 
+        WHERE T.FECHA_LLEGADA IS NOT NULL AND T.FECHA_RETIRO IS NOT NULL`)
+        //LLENO MI TABLA VICTIMA_ASOCIADO
+        await connection.execute(`
+        INSERT INTO VICTIMA_ASOCIADO va (va.ID_VICTIMA,va.ID_ASOCIADO, va.FECHA_CONOCIO, va.FECHA_INI_CONT, va.FECHA_FIN_CONT,va.ID_CONTACTO)
+        SELECT DISTINCT VV.ID_VICTIMA , A.ID_ASOCIADO , T.FECHA_CONOCIO, T.FECHA_INICIO_CONTACTO , T.FECHA_FIN_CONTACTO, c.ID_CONTACTO   FROM TEMPORAL t 
+        JOIN ASOCIADO a ON T.NOMBRE_ASOCIADO = A.NOMBRE_ASOCIADO AND T.APELLIDO_ASOCIADO = A.APELLIDO_ASOCIADO 
+        JOIN VICTIMAS_VIRUS vv ON T.NOMBRE_VICTIMA = VV.NOMBRE_VICTIMA  AND T.APELLIDO_VICTIMA = VV.APELLIDO_VICTIMA
+        JOIN CONTACTO c ON C.TIPO = T.CONTACTO_FISICO 
+        WHERE t.FECHA_CONOCIO IS NOT NULL  AND t.FECHA_INICIO_CONTACTO  IS NOT NULL AND t.FECHA_FIN_CONTACTO IS NOT NULL`)
+        //LLENO MI TABLA VICTIMA_UBICACION
+        await connection.execute(`
+        INSERT INTO VICTIMA_UBICACION vu (vu.ID_VICTIMA,vu.ID_UBICACION)
+        SELECT DISTINCT vv.ID_VICTIMA, u.ID_UBICACION  FROM TEMPORAL t 
+        JOIN VICTIMAS_VIRUS vv ON T.NOMBRE_VICTIMA = VV.NOMBRE_VICTIMA  AND T.APELLIDO_VICTIMA = VV.APELLIDO_VICTIMA
+        JOIN UBICACION u ON u.DIRECCION = t.UBICACION_VICTIMA`)
 
         await connection.close()
 
