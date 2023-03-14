@@ -17,7 +17,7 @@ El proyecto consiste en aprender a realizar cargas masivas desde un archivo de e
 
 <div align="center">
 
-![D](./Images/mod_log.png)
+![D](./img/mod_log.png)
 
 </div>
 
@@ -26,7 +26,7 @@ El proyecto consiste en aprender a realizar cargas masivas desde un archivo de e
 
 <div align="center">
 
-![D](./Images/mod_rel.png)
+![D](./img/mod_rel.png)
 </div>
 
 
