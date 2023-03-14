@@ -152,7 +152,42 @@ exports.cons7 = async function(req,res){
 }
 exports.cons8 = async function(req,res){
     try{
-        res.status(200).send({msg:"Consulta 8", valid:true})
+        var connection = await oracledb.getConnection({
+            user: user,
+            password: pass,
+            connectString: conn
+        });
+
+        const result = await connection.execute(`
+        SELECT VV.NOMBRE_VICTIMA , VV.APELLIDO_VICTIMA , EXTRACT(MONTH FROM VV.FECHA_PRIMERA_SOSPECHA) AS MES_SOS, COUNT(VT.ID_TRATAMIENTO) AS NUM_TRAT
+        FROM VICTIMAS_VIRUS vv 
+        JOIN VICTIMA_TRATAMIENTO vt ON VT.ID_VICTIMA = VV.ID_VICTIMA 
+        GROUP BY VV.NOMBRE_VICTIMA, VV.APELLIDO_VICTIMA , EXTRACT(MONTH FROM VV.FECHA_PRIMERA_SOSPECHA) 
+        HAVING COUNT(*) = (
+        SELECT MAX(NUM_TRAT)
+        FROM ( 
+            SELECT COUNT(*) AS NUM_TRAT 
+            FROM VICTIMAS_VIRUS vv2 
+            JOIN VICTIMA_TRATAMIENTO vt2 ON VV2.ID_VICTIMA = VT2.ID_VICTIMA 
+            GROUP BY VV2.NOMBRE_VICTIMA, VV2.APELLIDO_VICTIMA 
+        )
+        ) UNION 
+        SELECT vv3.NOMBRE_VICTIMA, vv3.APELLIDO_VICTIMA, EXTRACT (MONTH FROM vv3.FECHA_PRIMERA_SOSPECHA) AS MES_SOS, COUNT(VT3.ID_TRATAMIENTO) AS NUM_TRAT 
+        FROM VICTIMAS_VIRUS vv3 
+        JOIN VICTIMA_TRATAMIENTO vt3 ON VT3.ID_VICTIMA = VV3.ID_VICTIMA
+        GROUP BY VV3.NOMBRE_VICTIMA, VV3.APELLIDO_VICTIMA, EXTRACT(MONTH FROM VV3.FECHA_PRIMERA_SOSPECHA)
+        HAVING COUNT(*) = (
+        SELECT MIN(NUM_TRAT)
+        FROM(
+            SELECT COUNT(*) AS NUM_TRAT 
+            FROM VICTIMAS_VIRUS vv3 
+            JOIN VICTIMA_TRATAMIENTO vt4 ON VV3.ID_VICTIMA = VT4.ID_VICTIMA 
+            GROUP BY VV3.NOMBRE_VICTIMA, VV3.APELLIDO_VICTIMA 
+        )
+
+        )ORDER BY NUM_TRAT DESC
+    `);
+        res.status(200).send({msg:"Consulta 8",resultado:result, valid:true})
     }catch(error){
         res.status(400).send({msg:"error en server"})
     }
@@ -178,7 +213,36 @@ exports.cons9 = async function(req,res){
 }
 exports.cons10 = async function(req,res){
     try{
-        res.status(200).send({msg:"Consulta 10", valid:true})
+        var connection = await oracledb.getConnection({
+            user: user,
+            password: pass,
+            connectString: conn
+        });
+
+        const result = await connection.execute(`
+        SELECT h.NOMBRE, c.TIPO ,
+        (COUNT(DISTINCT VV.ID_VICTIMA)/(SELECT COUNT(*) FROM VICTIMAS_VIRUS) *100) AS porcentaje
+        FROM HOSPITAL h
+        JOIN VICTIMA_HOSPITAL vh ON H.ID_HOSPITAL = VH.ID_HOSPITAL 
+        JOIN VICTIMAS_VIRUS vv ON VH.ID_VICTIMA = VV.ID_VICTIMA 
+        JOIN VICTIMA_ASOCIADO va ON VV.ID_VICTIMA = VA.ID_VICTIMA 
+        JOIN CONTACTO c ON VA.ID_CONTACTO = C.ID_CONTACTO 
+        WHERE VH.ID_VICTIMA IN(
+            SELECT VA2.ID_VICTIMA  FROM VICTIMA_ASOCIADO va2 
+            WHERE ID_CONTACTO = (
+                SELECT ID_CONTACTO FROM ( 
+                    SELECT va3.ID_CONTACTO, COUNT(*)cnt 
+                    FROM VICTIMA_ASOCIADO va3 
+                    GROUP BY va3.ID_CONTACTO
+                    ORDER BY cnt DESC 
+                    FETCH FIRST 1 ROW ONLY	
+                )
+            )
+        )
+        GROUP BY h.NOMBRE, c.TIPO
+
+    `);
+        res.status(200).send({msg:"Consulta 10", resultado:result, valid:true})
     }catch(error){
         res.status(400).send({msg:"error en server"})
     }

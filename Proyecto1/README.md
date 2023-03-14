@@ -6,6 +6,25 @@
 ----
 El proyecto consiste en aprender a realizar cargas masivas desde un archivo de excel, convertir la información para insertarla en la base de datos y posteriormente utilizar la misma API para realizar consultas óptimas y obtener reportería sobre los datos almacenados
 ----
+**<h4 align="center">Modelo Conceptual</h4>**
+
+<div align="center">
+
+</div>
+
+
+**<h4 align="center">Modelo Logico</h4>**
+
+<div align="center">
+![D](./Images/mod_log.png)
+</div>
+
+**<h4 align="center">Modelo Relacional</h4>**
+
+<div align="center">
+![D](./Images/mod_rel.png)
+</div>
+
 
 **<h4 align="center">LOGICA (API)</h4>**
 Se creo una tabla llamada **TEMPORAL** en la base de datos la cual almacena los datos que provee el archivo de excel.
