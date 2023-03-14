@@ -9,7 +9,7 @@ El proyecto consiste en aprender a realizar cargas masivas desde un archivo de e
 **<h4 align="center">Modelo Conceptual</h4>**
 
 <div align="center">
-
+![D](./img/mod_con.png)
 </div>
 
 
