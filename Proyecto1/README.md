@@ -16,12 +16,16 @@ El proyecto consiste en aprender a realizar cargas masivas desde un archivo de e
 **<h4 align="center">Modelo Logico</h4>**
 
 <div align="center">
+
 ![D](./Images/mod_log.png)
+
 </div>
+
 
 **<h4 align="center">Modelo Relacional</h4>**
 
 <div align="center">
+
 ![D](./Images/mod_rel.png)
 </div>
 
