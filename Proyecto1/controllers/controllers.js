@@ -22,12 +22,13 @@ exports.cons1 = async function(req,res){
         });
 
         const result = await connection.execute(`
-      SELECT h.NOMBRE, h.DIRECCION, Count(h.nombre) AS muertes
-      FROM VICTIMAS_VIRUS vv 
-      JOIN VICTIMA_HOSPITAL vh ON vh.ID_VICTIMA = vv.ID_VICTIMA 
-      JOIN HOSPITAL h ON vh.ID_HOSPITAL = h.ID_HOSPITAL 
-      WHERE VV.FECHA_MUERTE IS NOT NULL
-      GROUP BY h.NOMBRE, h.DIRECCION
+        SELECT h.NOMBRE, h.DIRECCION, Count(h.nombre) AS muertes
+        FROM VICTIMAS_VIRUS vv 
+        JOIN VICTIMA_HOSPITAL vh ON vh.ID_VICTIMA = vv.ID_VICTIMA 
+        JOIN HOSPITAL h ON vh.ID_HOSPITAL = h.ID_HOSPITAL 
+        WHERE VV.FECHA_MUERTE IS NOT NULL
+        GROUP BY h.NOMBRE, h.DIRECCION
+        ORDER BY muertes DESC 
     `);
 
         await connection.close()
@@ -52,6 +53,7 @@ exports.cons2 = async function(req,res){
         JOIN VICTIMA_TRATAMIENTO vt ON VV.ID_VICTIMA = VT.ID_VICTIMA 
         JOIN TRATAMIENTO t ON T.ID_TRATAMIENTO = VT.ID_TRATAMIENTO
         WHERE VT.EFECTIVIDAD_VIC > 5 AND VT.ID_TRATAMIENTO = 1
+        ORDER BY vv.NOMBRE_VICTIMA ASC
     `);
 
         await connection.close()
@@ -75,6 +77,7 @@ exports.cons3 = async function(req,res){
         WHERE vv.FECHA_MUERTE IS NOT NULL 
         GROUP BY VT.ID_VICTIMA, VV.NOMBRE_VICTIMA, VV.APELLIDO_VICTIMA,vv.DIRECCION_VICTIMA
         having count(VT.ID_VICTIMA) > 3
+        ORDER BY asociados DESC
     `);
         res.status(200).send({msg:"Consulta 3", resultado:result,valid:true})
     }catch(error){
@@ -94,6 +97,7 @@ exports.cons4 = async function(req,res){
         SELECT vv.NOMBRE_VICTIMA , vv.APELLIDO_VICTIMA  FROM VICTIMAS_VIRUS vv 
         JOIN VICTIMA_ASOCIADO va ON va.ID_VICTIMA = vv.ID_VICTIMA 
         WHERE va.ID_CONTACTO = 4 AND vv.ESTADO_VICTIMA = 'Suspendida'
+        ORDER BY vv.NOMBRE_VICTIMA ASC
     `);
         res.status(200).send({msg:"Consulta 4", resultado: result, valid:true})
     }catch(error){
@@ -114,7 +118,7 @@ exports.cons5 = async function(req,res){
         JOIN VICTIMA_TRATAMIENTO vt ON vt.ID_VICTIMA = vv.ID_VICTIMA 
         WHERE vt.ID_TRATAMIENTO = 2
         GROUP BY vt.ID_VICTIMA, vv.NOMBRE_VICTIMA , vv.APELLIDO_VICTIMA 
-        ORDER BY tratamientos DESC 
+        ORDER BY tratamientos,vv.NOMBRE_VICTIMA  ASC 
         FETCH FIRST 5 ROWS ONLY
     `);
         res.status(200).send({msg:"Consulta 5", resultado:result, valid:true})
@@ -136,6 +140,7 @@ exports.cons6 = async function(req,res){
         JOIN VICTIMAS_VIRUS vv ON vv.ID_VICTIMA = vu.ID_VICTIMA 
         JOIN VICTIMA_TRATAMIENTO vt ON vt.ID_VICTIMA = vv.ID_VICTIMA 
         WHERE vu.ID_UBICACION = 9 AND vt.ID_TRATAMIENTO = 4
+        ORDER BY vv.NOMBRE_VICTIMA , vv.APELLIDO_VICTIMA ASC
     `);
         res.status(200).send({msg:"Consulta 6",resultado:result, valid:true})
     }catch(error){
@@ -205,6 +210,7 @@ exports.cons9 = async function(req,res){
         JOIN VICTIMA_HOSPITAL vh ON vv.ID_VICTIMA = vh.ID_VICTIMA 
         JOIN HOSPITAL h ON vh.ID_HOSPITAL = h.ID_HOSPITAL 
         GROUP BY h.nombre
+        ORDER BY porcentaje DESC
     `);
         res.status(200).send({msg:"Consulta 9",resultado:result, valid:true})
     }catch(error){
@@ -240,6 +246,7 @@ exports.cons10 = async function(req,res){
             )
         )
         GROUP BY h.NOMBRE, c.TIPO
+        ORDER BY PORCENTAJE DESC
 
     `);
         res.status(200).send({msg:"Consulta 10", resultado:result, valid:true})
