@@ -150,7 +150,23 @@ exports.cons6 = async function(req,res){
 
 exports.cons7 = async function(req,res){
     try{
-        res.status(200).send({msg:"Consulta 7", valid:true})
+        var connection = await oracledb.getConnection({
+            user: user,
+            password: pass,
+            connectString: conn
+        });
+
+        const result = await connection.execute(`
+        SELECT DISTINCT  VV.NOMBRE_VICTIMA , VV.APELLIDO_VICTIMA, COUNT(DISTINCT VA.ID_ASOCIADO) AS Asociados, COUNT(DISTINCT VT.ID_TRATAMIENTO) AS tratamientos
+        FROM VICTIMAS_VIRUS vv
+        JOIN VICTIMA_TRATAMIENTO vt ON VV.ID_VICTIMA = VT.ID_VICTIMA 
+        JOIN VICTIMA_HOSPITAL vh ON VH.ID_VICTIMA = VV.ID_VICTIMA 
+        JOIN VICTIMA_ASOCIADO va ON VA.ID_VICTIMA = VV.ID_VICTIMA 
+        GROUP BY VV.ID_VICTIMA, VV.NOMBRE_VICTIMA , VV.APELLIDO_VICTIMA 
+        HAVING COUNT(DISTINCT VA.ID_ASOCIADO) < 2 AND COUNT(DISTINCT VT.ID_TRATAMIENTO) = 2
+        ORDER BY vv.NOMBRE_VICTIMA , vv.APELLIDO_VICTIMA ASC
+    `);
+        res.status(200).send({msg:"Consulta 7",resultado: result, valid:true})
     }catch(error){
         res.status(400).send({msg:"error en server"})
     }
