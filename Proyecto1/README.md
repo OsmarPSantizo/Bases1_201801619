@@ -95,6 +95,77 @@ var connection = await oracledb.getConnection({
 
 ```
 
+Se creó un edpoint por cada consulta, también 4 apis para el manejo de las tablas (eliminacion, llenado).
+Este es un ejemplo del endpoint de la **consulta 5**:
+```
+try{
+        var connection = await oracledb.getConnection({              // Hacemos la conexión a la base de datos
+            user: user,
+            password: pass,
+            connectString: conn
+        });
+
+        const result = await connection.execute(`      //Ejecutamos la query que necesitamos
+        SELECT DISTINCT  vv.NOMBRE_VICTIMA , vv.APELLIDO_VICTIMA , COUNT(vt.ID_VICTIMA) AS tratamientos FROM VICTIMAS_VIRUS vv
+        JOIN VICTIMA_TRATAMIENTO vt ON vt.ID_VICTIMA = vv.ID_VICTIMA 
+        WHERE vt.ID_TRATAMIENTO = 2
+        GROUP BY vt.ID_VICTIMA, vv.NOMBRE_VICTIMA , vv.APELLIDO_VICTIMA 
+        ORDER BY tratamientos,vv.NOMBRE_VICTIMA  ASC 
+        FETCH FIRST 5 ROWS ONLY
+    `);
+        res.status(200).send({msg:"Consulta 5", resultado:result, valid:true})  // Devolvemos el resultado en en la etiqueta result
+    }catch(error){
+        res.status(400).send({msg:"error en server"})
+    }
+```
+La respuesta que obtendremos de la APi será la siguiente:
+```
+{
+    "msg": "Consulta 5",
+    "resultado": {
+        "metaData": [
+            {
+                "name": "NOMBRE_VICTIMA"
+            },
+            {
+                "name": "APELLIDO_VICTIMA"
+            },
+            {
+                "name": "TRATAMIENTOS"
+            }
+        ],
+        "rows": [
+            [
+                "Abbot",
+                "Conway",
+                1
+            ],
+            [
+                "Abra",
+                "Cherry",
+                1
+            ],
+            [
+                "Adara",
+                "Garza",
+                1
+            ],
+            [
+                "Alfonso",
+                "Gould",
+                1
+            ],
+            [
+                "Amal",
+                "Foster",
+                1
+            ]
+        ]
+    },
+    "valid": true
+}
+```
+
 **<h4 align="center">BASE DE DATOS ORACLE</h4>**
 La base de datos se hizo en un contenedor de docker utilizando la imagen de **oracle 18c**
 Los comandos que se utilizaron para crear la imagen y el usuario son los siguientes:
