@@ -93,3 +93,16 @@ CREATE TABLE items (
   PRIMARY KEY (Id),
   FOREIGN KEY (idOrden) REFERENCES ordenes (Id)
 );
+
+-- Creo mi tabla para guardar mis facturas
+CREATE TABLE facturas (
+  IdFactura INT AUTO_INCREMENT,
+  NumeroSerie VARCHAR(50) NOT NULL,
+  MontoTotal DECIMAL(10, 2) NOT NULL,
+  Lugar VARCHAR(255) NOT NULL,
+  FechaHora DATETIME NOT NULL,
+  IdOrden INT NOT NULL,
+  NitCliente VARCHAR(20) NOT NULL,
+  FormaPago CHAR(1) NOT NULL,
+  PRIMARY KEY (IdFactura)
+);
