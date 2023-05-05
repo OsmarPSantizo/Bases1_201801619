@@ -69,6 +69,7 @@ CREATE TABLE direcciones (
 );
 
 -- Creo mi tabla para guardar mis ordenes
+
 CREATE TABLE ordenes (
   Id INT NOT NULL AUTO_INCREMENT,
   IdCliente BIGINT NOT NULL,
@@ -78,6 +79,7 @@ CREATE TABLE ordenes (
   FechaEntrega DATETIME,
   Estado VARCHAR(50) NOT NULL,
   idRestaurante VARCHAR(100),
+  IdRepartidor BIGINT,
   PRIMARY KEY (Id)
 );
 
@@ -105,4 +107,12 @@ CREATE TABLE facturas (
   NitCliente VARCHAR(20) NOT NULL,
   FormaPago CHAR(1) NOT NULL,
   PRIMARY KEY (IdFactura)
+);
+
+-- Creo mi tabla para guardar el historial de transacciones
+
+CREATE TABLE historial (
+   Fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   Descripcion VARCHAR(200),
+   Tipo VARCHAR(200)
 );

@@ -234,8 +234,3 @@ BEGIN
   INSERT INTO historial (Fecha, Descripcion, Tipo)
   VALUES (NOW(), CONCAT('Se eliminó la factura con ID ', OLD.IdFactura), 'DELETE');
 END;
-
-SHOW TRIGGERS;
-
-
-
