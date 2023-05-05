@@ -348,3 +348,122 @@ finish_order: begin
 	UPDATE ordenes SET Estado = 'ENTREGADA',FechaEntrega = CURRENT_TIMESTAMP  WHERE Id = idOrden;
 
 END;
+
+-- Proc para Listar los restaurantes
+DROP PROCEDURE IF EXISTS GetRestaurants;
+CREATE PROCEDURE GetRestaurants()
+BEGIN
+    SELECT Id, Direccion, Municipio, Zona, Telefono, Personal,
+        CASE Parqueo WHEN 1 THEN 'Sí' ELSE 'No' END AS Tiene_Parqueo
+    FROM Restaurantes;
+END;
+
+-- Proc para Listar los obtener datos de un empleado
+DROP PROCEDURE IF EXISTS GetEmployee;
+CREATE PROCEDURE GetEmployee(
+	IN idEmpleado INT
+)
+get_empoyee : BEGIN
+	
+	/* VALIDAR QUE EL EMPLEADO NO EXISTA  */
+	IF (NOT EXISTS(SELECT Id FROM Empleados WHERE Id = idEmpleado )) THEN
+	SELECT 'EL CLIENTE NO EXISTE' AS ERROR;
+	LEAVE get_empoyee;
+	END IF;
+	
+	SELECT e.Id , CONCAT(e.Nombres,' ',e.Apellidos) AS NombreCompleto, e.FechaNacimiento, e.Correo, e.Telefono, e.Direccion, e.NumDPI, e.FechaInicio, p.Nombre,p.Salario
+	FROM Empleados e
+	INNER JOIN Puestos p ON e.IdPuesto = p.Id
+	WHERE e.Id = idEmpleado;
+	
+END;
+
+-- Proc para obtener los items de las ordenes
+DROP PROCEDURE IF EXISTS GetItemOfOrder;
+CREATE PROCEDURE GetItemOfOrder(
+	IN idOrder INT
+)
+get_items : BEGIN
+	
+	/* VALIDAR QUE EL EMPLEADO NO EXISTA  */
+	IF (NOT EXISTS(SELECT Id FROM ordenes WHERE Id = idOrder )) THEN
+	SELECT 'LA ORDEN NO EXISTE' AS ERROR;
+	LEAVE get_items;
+	END IF;
+	/* VALIDAR QUE LA ORDEN SEA DIFERENTE A SIN CONBERTURA  */
+	IF (NOT EXISTS(SELECT Id FROM Ordenes WHERE Id = idOrder AND (Estado = 'INICIADA' OR Estado = 'AGREGANDO') )) THEN
+	SELECT 'ESTA ORDEN NO TIENE COBERTURA' AS ERROR;
+	LEAVE get_items;
+	END IF;
+
+	/* LE PONGO NOMBRE AL TIPO DE PRODUCTO  */
+	SELECT p.Nombre AS Producto,
+	       CASE i.tipo_prod
+		       WHEN 'C' THEN 'Combo'
+		       WHEN 'E' THEN 'Extra'
+		       WHEN 'B' THEN 'Bebida'
+		       WHEN 'P' THEN 'Postre'
+	       END AS TipoProducto,
+	       p.Precio AS Precio,
+	       i.cantidad AS Cantidad,
+	       i.observacion AS Observacion
+	FROM items i
+	INNER JOIN Productos p ON CONCAT(i.tipo_prod, producto) = p.Id
+	WHERE i.idOrden = idOrder;
+	
+END;
+
+-- Proc para obtener las direcciones de un cliente
+DROP PROCEDURE IF EXISTS GetAddress;
+CREATE PROCEDURE GetAddress(
+	IN dpi_client BIGINT
+)
+get_address : BEGIN
+	
+	/* VALIDAR QUE EL EMPLEADO NO EXISTA  */
+	IF (NOT EXISTS(SELECT DPI FROM clientes WHERE DPI = dpi_client )) THEN
+	SELECT 'EL CLIENTE NO EXISTE' AS ERROR;
+	LEAVE get_address;
+	END IF;
+	/* OBTENGO LOS DATOS DE LA DIRECCION  */
+	SELECT Direccion,Municipio,Zona  FROM direcciones 
+	WHERE DPI = dpi_client;
+	
+END;
+
+-- Proc para obtener ordenes según el estado
+DROP PROCEDURE IF EXISTS GetOrdersByState;
+CREATE PROCEDURE GetOrdersByState(
+	IN EstadoOrden INT
+)
+get_orders_state : BEGIN
+	
+	SELECT o.Id as IdOrden, o.Estado, o.FechaInicio as Fecha, o.IdCliente as DPICliente,o.IdDireccion, CASE o.canal
+		       WHEN 'L' THEN 'Llamada'
+		       WHEN 'A' THEN 'Aplicacion'
+	       END AS Canal, r.Direccion as Restaurante
+	FROM ordenes o 
+	LEFT OUTER JOIN restaurantes r ON r.Id = IdDireccion
+	WHERE Estado = CASE EstadoOrden
+		       WHEN 1 THEN 'INICIADA'
+		       WHEN 2 THEN 'AGREGANDO'
+		       WHEN 3 THEN 'EN CAMINO'
+		       WHEN 4 THEN 'ENTREGADA'
+     		   WHEN -1 THEN 'SIN COBERTURA'
+	       END;
+	
+END;
+
+
+-- Proc para consultar los tiempos de espera
+DROP PROCEDURE IF EXISTS GetTimes;
+CREATE PROCEDURE GetTimes(
+	IN Minutos INT
+)
+get_times : BEGIN
+	
+	SELECT o.Id as IdOrden, o.IdDireccion as DireccionEntrega, o.FechaInicio, TIMEDIFF(o.FechaEntrega, o.FechaInicio) AS TiempoEspera, CONCAT(e.Nombres,' ',e.Apellidos) AS Repartidor
+	FROM ordenes o
+	LEFT JOIN empleados e ON o.IdRepartidor = e.Id
+	WHERE o.Estado = 'ENTREGADA' AND TIMESTAMPDIFF(MINUTE, o.FechaInicio, o.FechaEntrega) >= Minutos;
+END;
